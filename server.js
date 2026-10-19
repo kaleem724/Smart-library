@@ -1,6 +1,5 @@
 const express = require('express');
 const session = require('express-session');
-const flash = require('connect-flash');
 const path = require('path');
 const db = require('./config/db'); // डेटाबेस कनेक्शन
 
@@ -18,11 +17,9 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }));
-app.use(flash());
 
-// Flash Messages Middleware
+// User Session Middleware
 app.use((req, res, next) => {
-  res.locals.message = req.flash();
   res.locals.user = req.session.user || null;
   next();
 });
@@ -51,7 +48,7 @@ app.get('/books', w(async (req, res) => {
 app.get('/books/:id', w(async (req, res) => {
   const [b] = await db.query("SELECT * FROM books WHERE id = ?", [req.params.id]);
   if (!b.length) return res.status(404).send('Book not found');
-  res.render('book-details', { book: b[0] });
+  res.render('book-details', { book: b });
 }));
 
 // Login Routes
@@ -59,12 +56,10 @@ app.get('/login', (req, res) => res.render('login'));
 app.post('/login', w(async (req, res) => {
   const { email, password } = req.body;
   const [users] = await db.query("SELECT * FROM students WHERE email = ?", [email]);
-  if (users.length && users[0].password_hash === password) { // Simple check for testing
-    req.session.user = users[0];
-    req.flash('success', 'Logged in successfully!');
+  if (users.length && users.password_hash === password) { 
+    req.session.user = users[0]; // Fix for user array access
     return res.redirect('/books');
   }
-  req.flash('error', 'Invalid email or password');
   res.redirect('/login');
 }));
 
@@ -74,10 +69,8 @@ app.post('/register', w(async (req, res) => {
   const { name, email, password } = req.body;
   try {
     await db.query("INSERT INTO students (name, email, password_hash) VALUES (?, ?, ?)", [name, email, password]);
-    req.flash('success', 'Registration successful! Please login.');
     res.redirect('/login');
   } catch (err) {
-    req.flash('error', 'Email already exists or database error');
     res.redirect('/register');
   }
 }));
@@ -104,32 +97,26 @@ app.get('/reservations', auth.student, w(async (req, res) => {
 
 // Book Reservation Action
 app.post('/books/:id/reserve', auth.student, w(async (req, res) => {
-  let msg = ['success', 'Book reserved successfully!'];
   try {
     const [d] = await db.query("SELECT id FROM reservations WHERE student_id=? AND book_id=? AND status IN('Pending','Approved')", [req.session.user.id, req.params.id]);
-    if (d.length) {
-      msg = ['error', 'You already have an active reservation for this book.'];
-    } else {
+    if (!d.length) {
       await db.query('INSERT INTO reservations(student_id, book_id) VALUES(?,?)', [req.session.user.id, req.params.id]);
     }
   } catch (e) {
     throw e;
   }
-  req.flash(msg[0], msg[1]);
   res.redirect('/reservations');
 }));
 
 // Cancel Reservation Action
 app.post('/reservations/:id/cancel', auth.student, w(async (req, res) => {
   await db.query("UPDATE reservations SET status = 'Cancelled' WHERE id = ? AND student_id = ?", [req.params.id, req.session.user.id]);
-  req.flash('success', 'Reservation cancelled.');
   res.redirect('/reservations');
 }));
 
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err);
-  req.flash('error', 'Something went wrong. Please try again.');
   res.redirect('/');
 });
 
