@@ -55,9 +55,17 @@ app.post('/books/:id/reserve',auth.student,w(async(req,res)=>{
       else await c.query('INSERT INTO reservations(student_id,book_id) VALUES(?,?)',[req.session.user.id,req.params.id]);}
     await c.commit();}catch(e){await c.rollback();throw e;}finally{c.release();}
   flash(req,...msg);res.redirect(msg[0]==='success'?'/reservations':'/books/'+req.params.id);}));
-app.get('/reservations',auth.student,w(async(req,res)=>{
-  const [rows] = await c.query("SELECT r.id, b.title, b.author, r.status, r.reservation_date FROM reservations r JOIN books b ON r.book_id = b.id WHERE r.student_id = ?", [req.session.user.id]);
-
+app.get('/reservations', auth.student, w(async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT r.id, b.title, b.author, r.status, r.reservation_date FROM reservations r JOIN books b ON r.book_id = b.id WHERE r.student_id = ?",
+      [req.session.user.id]
+    );
+    res.render('reservations', { rows });
+  } catch (e) {
+    throw e;
+  }
+}));
 app.post('/reservations/:id/cancel',auth.student,w(async(req,res)=>{
   const [r]=await db.query("UPDATE reservations SET status='Cancelled' WHERE id=? AND student_id=? AND status='Pending'",[req.params.id,req.session.user.id]);
   flash(req,r.affectedRows?'success':'error',r.affectedRows?'Reservation cancelled.':'Only pending reservations can be cancelled.');res.redirect('/reservations');}));
