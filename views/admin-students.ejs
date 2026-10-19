@@ -1,0 +1,2 @@
+<%- include("partials/head") %><h1>Registered Students</h1><form class="bar" method="get"><input name="q" value="<%= q %>" placeholder="Search name or email"><button>Search</button></form>
+<div class="wrap"><table><tr><th>ID</th><th>Name</th><th>Email</th><th>Registered</th></tr><% rows.forEach(s=>{ %><tr><td><%= s.id %></td><td><%= s.name %></td><td><%= s.email %></td><td><%= new Date(s.created_at).toLocaleDateString() %></td></tr><% }) %></table></div><%- include("partials/foot") %>

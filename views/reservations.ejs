@@ -1,0 +1,4 @@
+<%- include("partials/head") %><h1>My Reservations</h1><div class="wrap"><table><tr><th>Book</th><th>Date</th><th>Status</th><th></th></tr>
+<% rows.forEach(r=>{ %><tr><td><%= r.title %><br><small><%= r.author %></small></td><td><%= new Date(r.reserved_at).toLocaleString() %></td><td><span class="badge <%= r.status %>"><%= r.status %></span></td>
+<td><% if(r.status==='Pending'){ %><form method="post" action="/reservations/<%= r.id %>/cancel" data-confirm="Cancel this reservation?"><button class="red sm">Cancel</button></form><% } %></td></tr><% }) %></table></div>
+<% if(!rows.length){ %><p>No reservations yet.</p><% } %><%- include("partials/foot") %>

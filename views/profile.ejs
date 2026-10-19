@@ -1,0 +1,1 @@
+<%- include("partials/head") %><div class="card form"><h2><i class="fa fa-user"></i> My Profile</h2><p><b>Name:</b> <%= p.name %></p><p><b>Email:</b> <%= p.email %></p><p><b>Registered:</b> <%= new Date(p.created_at).toLocaleDateString() %></p></div><%- include("partials/foot") %>

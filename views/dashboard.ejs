@@ -1,0 +1,3 @@
+<%- include("partials/head") %><h1>Welcome, <%= user.name %></h1><div class="grid"><div class="card stat"><b><%= s.total %></b>My reservations</div><div class="card stat"><b><%= s.pending||0 %></b>Pending</div>
+<div class="card stat"><b><%= s.approved||0 %></b>Approved</div><div class="card stat"><b><%= avail %></b>Copies available</div></div>
+<a class="btn" href="/books">Find a book</a> <a class="btn grey" href="/reservations">My reservations</a><%- include("partials/foot") %>

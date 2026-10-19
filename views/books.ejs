@@ -1,0 +1,3 @@
+<%- include("partials/head") %><h1>Book Catalogue</h1><form class="bar" method="get"><input name="q" value="<%= q %>" placeholder="Search title, author or category"><select name="category"><option value="">All categories</option>
+<% cats.forEach(c=>{ %><option <%= c.category===cat?'selected':'' %>><%= c.category %></option><% }) %></select><button><i class="fa fa-search"></i> Search</button></form>
+<% if(!books.length){ %><p>No books found.</p><% } %><div class="grid"><% books.forEach(b=>{ %><%- include("partials/card",{b}) %><% }) %></div><%- include("partials/foot") %>

@@ -1,0 +1,2 @@
+<%- include("partials/head") %><div class="hero"><h1><i class="fa fa-book"></i> Smart Library</h1><p>Search, reserve and track your books online.</p><a class="btn" style="background:#fff;color:#1d4ed8" href="/books">Browse Catalogue</a></div>
+<h2>Recently added</h2><div class="grid"><% books.forEach(b=>{ %><%- include("partials/card",{b}) %><% }) %></div><%- include("partials/foot") %>

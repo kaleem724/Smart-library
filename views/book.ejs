@@ -1,0 +1,4 @@
+<%- include("partials/head") %><div class="card"><h1><%= b.title %></h1><p><b>Author:</b> <%= b.author %> | <b>Category:</b> <%= b.category %> | <b>ISBN:</b> <%= b.isbn %></p><p><%= b.description %></p>
+<p class="<%= b.available_qty>0?'ok':'no' %>"><b><%= b.available_qty %> of <%= b.total_qty %> copies available</b></p>
+<% if(user&&user.role==='student'){ %><% if(b.available_qty>0){ %><form method="post" action="/books/<%= b.id %>/reserve" data-confirm="Reserve this book?"><button>Reserve</button></form><% } else { %><p>Currently unavailable.</p><% } %>
+<% } else if(!user){ %><a class="btn" href="/login">Log in to reserve</a><% } %></div><%- include("partials/foot") %>

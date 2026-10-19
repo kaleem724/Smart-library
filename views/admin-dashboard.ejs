@@ -1,0 +1,3 @@
+<%- include("partials/head") %><h1>Admin Dashboard</h1><div class="grid"><div class="card stat"><b><%= st.books %></b>Total book titles</div><div class="card stat"><b><%= st.available %></b>Available copies</div>
+<div class="card stat"><b><%= st.students %></b>Students</div><div class="card stat"><b><%= st.reservations %></b>Reservations</div><div class="card stat"><b><%= st.pending %></b>Pending requests</div></div>
+<a class="btn" href="/admin/reservations?status=Pending">Review pending</a><%- include("partials/foot") %>

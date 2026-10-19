@@ -1,0 +1,2 @@
+<%- include("partials/head") %><form class="card form" method="post" action="<%= admin?'/admin/login':'/login' %>"><h2><%= admin?'Admin':'Student' %> Login</h2>
+<label><%= admin?'Username':'Email' %></label><input name="id" required><label>Password</label><input type="password" name="password" required><button>Login</button></form><%- include("partials/foot") %>

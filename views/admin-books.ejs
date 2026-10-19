@@ -1,0 +1,9 @@
+<%- include("partials/head") %><h1>Manage Books</h1><details class="card"><summary><b>+ Add new book</b></summary><form method="post" action="/admin/books">
+<input name="title" placeholder="Title" required><input name="author" placeholder="Author" required><input name="category" placeholder="Category" required><input name="isbn" placeholder="ISBN" required>
+<textarea name="description" placeholder="Description"></textarea><input type="number" min="0" name="total_qty" placeholder="Quantity" required><button>Add book</button></form></details>
+<form class="bar" method="get"><input name="q" value="<%= q %>" placeholder="Search books"><button>Search</button></form>
+<div class="wrap"><table><tr><th>Title</th><th>Author</th><th>Category</th><th>ISBN</th><th>Avail/Total</th><th>Actions</th></tr>
+<% books.forEach(b=>{ %><tr><td><%= b.title %></td><td><%= b.author %></td><td><%= b.category %></td><td><%= b.isbn %></td><td><%= b.available_qty %>/<%= b.total_qty %></td><td class="acts">
+<details><summary>Edit</summary><form method="post" action="/admin/books/<%= b.id %>/edit"><input name="title" value="<%= b.title %>" required><input name="author" value="<%= b.author %>" required>
+<input name="category" value="<%= b.category %>" required><input name="isbn" value="<%= b.isbn %>" required><textarea name="description"><%= b.description %></textarea><input type="number" min="0" name="total_qty" value="<%= b.total_qty %>" required><button class="sm">Save</button></form></details>
+<form method="post" action="/admin/books/<%= b.id %>/delete" data-confirm="Delete this book?"><button class="red sm">Delete</button></form></td></tr><% }) %></table></div><%- include("partials/foot") %>

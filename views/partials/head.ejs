@@ -1,0 +1,8 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Smart Library</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"><link rel="stylesheet" href="/css/style.css"></head><body>
+<nav><a class="brand" href="/"><i class="fa fa-book-open-reader"></i> Smart Library</a><div><a href="/books">Catalogue</a>
+<% if(!user){ %><a href="/login">Login</a><a href="/register">Register</a><a href="/admin/login">Admin</a>
+<% } else if(user.role==='admin'){ %><a href="/admin">Dashboard</a><a href="/admin/books">Books</a><a href="/admin/students">Students</a><a href="/admin/reservations">Reservations</a>
+<% } else { %><a href="/dashboard">Dashboard</a><a href="/reservations">My Reservations</a><a href="/profile">Profile</a><% } %>
+<% if(user){ %><form method="post" action="/logout" class="inline"><button class="link"><i class="fa fa-right-from-bracket"></i> Logout</button></form><% } %></div></nav>
+<main><% if(flash){ %><div class="alert <%= flash.type %>"><%= flash.msg %></div><% } %>

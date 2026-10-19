@@ -1,0 +1,2 @@
+<div class="card"><h3><%= b.title %></h3><p><i class="fa fa-user"></i> <%= b.author %><br><i class="fa fa-tag"></i> <%= b.category %></p>
+<p class="<%= b.available_qty>0?'ok':'no' %>"><%= b.available_qty>0 ? b.available_qty+' available' : 'Unavailable' %></p><a class="btn sm" href="/books/<%= b.id %>">Details</a></div>
