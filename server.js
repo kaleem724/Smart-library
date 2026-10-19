@@ -57,13 +57,15 @@ app.post('/books/:id/reserve',auth.student,w(async(req,res)=>{
   flash(req,...msg);res.redirect(msg[0]==='success'?'/reservations':'/books/'+req.params.id);}));
 app.get('/reservations', auth.student, w(async (req, res) => {
   try {
-    const [rows] = await db.query(
+    // execute का इस्तेमाल करें जो Railway पर तेज़ और सुरक्षित चलता है
+    const [rows] = await db.execute(
       "SELECT r.id, b.title, b.author, r.status, r.reservation_date FROM reservations r JOIN books b ON r.book_id = b.id WHERE r.student_id = ?",
       [req.session.user.id]
     );
     res.render('reservations', { rows });
   } catch (e) {
-    throw e;
+    console.error("Database Error:", e);
+    res.status(500).send("Database connection issue");
   }
 }));
 app.post('/reservations/:id/cancel',auth.student,w(async(req,res)=>{
