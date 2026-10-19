@@ -119,4 +119,7 @@ app.post('/admin/reservations/:id/:action',auth.admin,w(async(req,res)=>{
 
 app.use((req,res)=>res.status(404).render('404'));
 app.use((err,req,res,next)=>{console.error(err);res.status(500).send('Something went wrong. Please try again.');});
-app.listen(process.env.PORT||3000,()=>console.log('Running on http://localhost:'+(process.env.PORT||3000)));
+app.listen(process.env.PORT || 3000, '0.0.0.0', () => {
+  console.log(`Server is running on port ${process.env.PORT || 3000}`);
+});
+
