@@ -18,16 +18,20 @@ app.use(session({
   saveUninitialized: false
 }));
 
-// User Session Middleware
+// ✨ ग्लोबल यूनिवर्सल फिक्स: सभी EJS टेम्पलेट्स के लिए वेरिएबल्स सेट करना
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
+  res.locals.admin = (req.session.user && req.session.user.is_admin) ? req.session.user.is_admin : null;
+  res.locals.flash = null;
+  res.locals.books = [];
+  res.locals.rows = []; // रिजर्वेशन पेज के लिए
   next();
 });
 
 // Helper wrapper for async routes
 const w = fn => (req, res, next) => fn(req, res, next).catch(next);
 
-// Authentication Middleware (लूप से बचने के लिए इसे सुधारा गया है)
+// Authentication Middleware
 const auth = {
   student: (req, res, next) => req.session.user ? next() : res.redirect('/login'),
   admin: (req, res, next) => (req.session.user && req.session.user.is_admin) ? next() : res.redirect('/login')
@@ -35,12 +39,12 @@ const auth = {
 
 // ==================== ROUTES ====================
 
-// Home Route (इसे सुधारा गया ताकि ये सीधे बुक्स पर जाए अगर लॉगिन हो, वरना बिना रीडायरेक्ट के इंडेक्स दिखाए)
+// Home Route
 app.get('/', (req, res) => {
   if (req.session.user) {
     return res.redirect('/books');
   }
-  res.render('index', { books: [] });
+  res.render('index');
 });
 
 // Catalog / Books Route
@@ -56,23 +60,24 @@ app.get('/books/:id', w(async (req, res) => {
   res.render('book-details', { book: b[0] || b });
 }));
 
-// Login Routes (लूप तोड़ने के लिए बदलाव)
+// Login Routes
 app.get('/login', (req, res) => {
   if (req.session.user) {
     return res.redirect('/books');
   }
-  res.render('login', { admin: null });
+  res.render('login');
 });
 
 app.post('/login', w(async (req, res) => {
   const { email, password } = req.body;
   const [users] = await db.query("SELECT * FROM students WHERE email = ?", [email]);
   
+  // यहाँ फिक्स किया: users.length चेक करने के बाद users[0] को पासवर्ड से मैच किया
   if (users.length && users[0].password_hash === password) { 
-    req.session.user = users[0]; // पहले यूजर को सही तरीके से स्टोर करें
+    req.session.user = users[0]; 
     return res.redirect('/books');
   }
-  res.redirect('/login');
+  res.render('login', { error: 'Invalid username or password' });
 }));
 
 // Register Routes
@@ -89,7 +94,7 @@ app.post('/register', w(async (req, res) => {
     await db.query("INSERT INTO students (name, email, password_hash) VALUES (?, ?, ?)", [name, email, password]);
     res.redirect('/login');
   } catch (err) {
-    res.redirect('/register');
+    res.render('register', { error: 'Registration failed. Try again.' });
   }
 }));
 
@@ -99,7 +104,7 @@ app.get('/logout', (req, res) => {
   res.redirect('/');
 });
 
-// --- RESERVATIONS PAGE ROUTE (WITH FIXED DATE) ---
+// --- RESERVATIONS PAGE ROUTE ---
 app.get('/reservations', auth.student, w(async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -132,7 +137,7 @@ app.post('/reservations/:id/cancel', auth.student, w(async (req, res) => {
   res.redirect('/reservations');
 }));
 
-// Global Error Handler (इसे भी रीडायरेक्ट लूप से बचाने के लिए सिंपल मैसेज में बदला गया है)
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).send('Something went wrong on the server.');
