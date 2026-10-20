@@ -106,7 +106,7 @@ app.get('/books/:id', w(async (req, res) => {
   const singleBook = rows[0];
   
   // दोनों 'book' और 'b' पास कर रहे हैं ताकि टेम्पलेट में कोई भी नाम इस्तेमाल हो, क्रैश न हो
-  res.render('book-details', { book: singleBook, b: singleBook });
+  res.render('book', { book: singleBook, b: singleBook });
 }));
 
 // Login Routes
