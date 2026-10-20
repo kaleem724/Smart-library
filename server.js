@@ -53,8 +53,37 @@ app.get('/', (req, res) => {
 
 // Catalog / Books Route
 app.get('/books', w(async (req, res) => {
-  const [books] = await db.query("SELECT * FROM books");
-  res.render('books', { books: books || [] });
+  // 🔥 फिक्स: सर्च और फ़िल्टर पैरामीटर्स को सुरक्षित रूप से हैंडल करना
+  const q = req.query.q || '';
+  const cat = req.query.category || '';
+
+  // डेटाबेस से कैटेगरीज़ की लिस्ट निकालना ताकि EJS लूप क्रैश न हो
+  const [cats] = await db.query("SELECT DISTINCT category FROM books WHERE category IS NOT NULL");
+
+  // सर्च क्वेरी के हिसाब से किताबें निकालना
+  let queryStr = "SELECT * FROM books WHERE 1=1";
+  let params = [];
+
+  if (q) {
+    queryStr += " AND (title LIKE ? OR author LIKE ? OR category LIKE ?)";
+    const searchVal = `%${q}%`;
+    params.push(searchVal, searchVal, searchVal);
+  }
+
+  if (cat) {
+    queryStr += " AND category = ?";
+    params.push(cat);
+  }
+
+  const [books] = await db.query(queryStr, params);
+
+  // सभी ज़रूरी वेरिएबल्स को EJS टेम्पलेट में पास करना
+  res.render('books', { 
+    books: books || [], 
+    cats: cats || [], 
+    q: q, 
+    cat: cat 
+  });
 }));
 
 // Book Details Route
@@ -76,7 +105,7 @@ app.post('/login', w(async (req, res) => {
   const { email, password } = req.body;
   const [users] = await db.query("SELECT * FROM students WHERE email = ?", [email]);
   
-  // 🔥 फिक्स: डेटाबेस से सिंगल यूज़र ऑब्जेक्ट (users[0]) निकालने का बिल्कुल सटीक तरीका
+  // 🔥 फिक्स: डेटाबेस से सिंगल यूज़र ऑब्जेक्ट निकालने का बिल्कुल सटीक तरीका
   if (users && users.length > 0) {
     const dbUser = users[0];
     if (dbUser.password_hash === password) { 
