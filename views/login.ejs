@@ -1,2 +1,27 @@
-<%- include("partials/head") %><form class="card form" method="post" action="<%= admin?'/admin/login':'/login' %>"><h2><%= admin?'Admin':'Student' %> Login</h2>
-<label><%= admin?'Username':'Email' %></label><input name="id" required><label>Password</label><input type="password" name="password" required><button>Login</button></form><%- include("partials/foot") %>
+<%- include("partials/head") %>
+
+<%# 🔥 एरर अलर्ट दिखाने के लिए (यदि लॉगिन फेल हो तो मैसेज दिखेगा) %>
+<% if (typeof error !== 'undefined' && error) { %>
+  <div class="alert alert-danger" style="color: red; margin-bottom: 15px; text-align: center;">
+    <%= error %>
+  </div>
+<% } %>
+
+<%# 🔥 फिक्स: एक्शन यूआरएल को सीधे '/login' किया ताकि रिक्वेस्ट हमेशा सही रूट पर जाए %>
+<form class="card form" method="post" action="/login">
+  
+  <h2>Student Login</h2>
+  
+  <label>Email</label>
+  <%# 🔥 फिक्स: name="id" को बदलकर name="email" किया ताकि बैकएंड को ईमेल मिल सके %>
+  <input type="email" name="email" placeholder="Enter your email" required>
+  
+  <label>Password</label>
+  <input type="password" name="password" placeholder="Enter your password" required>
+  
+  <%# 🔥 फिक्स: type="submit" जोड़ा ताकि बटन दबाते ही फॉर्म सबमिट हो %>
+  <button type="submit">Login</button>
+
+</form>
+
+<%- include("partials/foot") %>
