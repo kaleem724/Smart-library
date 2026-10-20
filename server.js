@@ -51,16 +51,27 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
+// 🛠️ NEW: Dashboard Route
+app.get('/dashboard', auth.student, w(async (req, res) => {
+  // यदि एडमिन डैशबोर्ड अलग है, तो आप यहाँ से रेंडर कर सकते हैं
+  if (req.session.user.is_admin) {
+    return res.render('admin-dashboard'); 
+  }
+  res.render('dashboard'); // या जो भी आपकी स्टूडेंट डैशबोर्ड फ़ाइल का नाम हो
+}));
+
+// 🛠️ NEW: Profile Route
+app.get('/profile', auth.student, (req, res) => {
+  res.render('profile');
+});
+
 // Catalog / Books Route
 app.get('/books', w(async (req, res) => {
-  // 🔥 फिक्स: सर्च और फ़िल्टर पैरामीटर्स को सुरक्षित रूप से हैंडल करना
   const q = req.query.q || '';
   const cat = req.query.category || '';
 
-  // डेटाबेस से कैटेगरीज़ की लिस्ट निकालना ताकि EJS लूप क्रैश न हो
   const [cats] = await db.query("SELECT DISTINCT category FROM books WHERE category IS NOT NULL");
 
-  // सर्च क्वेरी के हिसाब से किताबें निकालना
   let queryStr = "SELECT * FROM books WHERE 1=1";
   let params = [];
 
@@ -77,7 +88,6 @@ app.get('/books', w(async (req, res) => {
 
   const [books] = await db.query(queryStr, params);
 
-  // सभी ज़रूरी वेरिएबल्स को EJS टेम्पलेट में पास करना
   res.render('books', { 
     books: books || [], 
     cats: cats || [], 
@@ -86,11 +96,13 @@ app.get('/books', w(async (req, res) => {
   });
 }));
 
-// Book Details Route
+// Book Details Route (🛠️ FIXED DATA PASSING FOR BOTH 'book' AND 'b')
 app.get('/books/:id', w(async (req, res) => {
   const [b] = await db.query("SELECT * FROM books WHERE id = ?", [req.params.id]);
   if (!b || !b.length) return res.status(404).send('Book not found');
-  res.render('book-details', { book: b[0] });
+  
+  // दोनों 'book' और 'b' पास कर रहे हैं ताकि टेम्पलेट में कोई भी नाम हो, एरर न आए
+  res.render('book-details', { book: b[0], b: b[0] });
 }));
 
 // Login Routes
@@ -105,11 +117,10 @@ app.post('/login', w(async (req, res) => {
   const { email, password } = req.body;
   const [users] = await db.query("SELECT * FROM students WHERE email = ?", [email]);
   
-  // 🔥 फिक्स: डेटाबेस से सिंगल यूज़र ऑब्जेक्ट निकालने का बिल्कुल सटीक तरीका
   if (users && users.length > 0) {
     const dbUser = users[0];
     if (dbUser.password_hash === password) { 
-      req.session.user = dbUser; // सिंगल यूज़र को सेशन में स्टोर करें
+      req.session.user = dbUser;
       return res.redirect('/books');
     }
   }
