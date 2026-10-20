@@ -24,7 +24,7 @@ app.use((req, res, next) => {
   res.locals.admin = (req.session.user && req.session.user.is_admin) ? req.session.user.is_admin : null;
   res.locals.flash = null;
   res.locals.books = [];
-  res.locals.rows = []; // रिजर्वेशन पेज के लिए
+  res.locals.rows = []; 
   res.locals.error = null;
   res.locals.q = '';
   res.locals.cat = '';
@@ -51,10 +51,10 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
-// 🛠️ FIXED: Dashboard Route (Passing expected empty arrays/objects to prevent crash)
+// 🛠️ FIXED: Dashboard Route
 app.get('/dashboard', auth.student, w(async (req, res) => {
   if (req.session.user.is_admin) {
-    return res.render('admin-dashboard'); 
+    return res.render('admin-dashboard', { user: req.session.user }); 
   }
   res.render('dashboard', { user: req.session.user }); 
 }));
@@ -103,7 +103,7 @@ app.get('/books/:id', w(async (req, res) => {
     return res.status(404).send('Book not found');
   }
   
-  const singleBook = rows[0];
+  const singleBook = rows[0]; // एरे का पहला आइटम निकालें
   res.render('book', { book: singleBook, b: singleBook });
 }));
 
@@ -115,14 +115,15 @@ app.get('/login', (req, res) => {
   res.render('login');
 });
 
+// 🛠️ 100% FIXED: Login POST Route (Strict Single Object Extraction)
 app.post('/login', w(async (req, res) => {
   const { email, password } = req.body;
   const [users] = await db.query("SELECT * FROM students WHERE email = ?", [email]);
   
   if (users && users.length > 0) {
-    const dbUser = users[0];
+    const dbUser = users[0]; // 🔥 फिक्स: एरे ब्रैकेट [0] से सिर्फ सिंगल यूजर ऑब्जेक्ट निकालें
     if (dbUser.password_hash === password) { 
-      req.session.user = dbUser;
+      req.session.user = dbUser; 
       return res.redirect('/books');
     }
   }
@@ -148,7 +149,7 @@ app.post('/register', w(async (req, res) => {
   }
 }));
 
-// 🛠️ FIXED: Logout Route (Supports both GET and POST)
+// Logout Route
 const handleLogout = (req, res) => {
   req.session.destroy();
   res.redirect('/');
@@ -170,7 +171,7 @@ app.get('/reservations', auth.student, w(async (req, res) => {
   }
 }));
 
-// 🛠️ 100% FIXED: Book Reservation Action (MySQL Array Destruction Handling)
+// Book Reservation Action
 app.post('/books/:id/reserve', auth.student, w(async (req, res) => {
   try {
     const [d] = await db.query("SELECT id FROM reservations WHERE student_id=? AND book_id=? AND status IN('Pending','Approved')", [req.session.user.id, req.params.id]);
@@ -196,7 +197,6 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something went wrong on the server.');
 });
 
-// --- FIXED HOST & PORT FOR RAILWAY ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
