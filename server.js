@@ -18,13 +18,17 @@ app.use(session({
   saveUninitialized: false
 }));
 
-// ✨ ग्लोबल यूनिवर्सल फिक्स: सभी EJS टेम्पलेट्स के लिए वेरिएबल्स सेट करना
+// ✨ ग्लोबल यूनिवर्सल फिक्स: सभी EJS टेम्पलेट्स के लिए वेरिएबल्स सेट करना ताकि कोई पेज क्रैश न हो
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.admin = (req.session.user && req.session.user.is_admin) ? req.session.user.is_admin : null;
   res.locals.flash = null;
   res.locals.books = [];
   res.locals.rows = []; // रिजर्वेशन पेज के लिए
+  res.locals.error = null;
+  res.locals.q = '';
+  res.locals.cat = '';
+  res.locals.cats = [];
   next();
 });
 
@@ -50,14 +54,14 @@ app.get('/', (req, res) => {
 // Catalog / Books Route
 app.get('/books', w(async (req, res) => {
   const [books] = await db.query("SELECT * FROM books");
-  res.render('books', { books });
+  res.render('books', { books: books || [] });
 }));
 
 // Book Details Route
 app.get('/books/:id', w(async (req, res) => {
   const [b] = await db.query("SELECT * FROM books WHERE id = ?", [req.params.id]);
-  if (!b.length) return res.status(404).send('Book not found');
-  res.render('book-details', { book: b[0] || b });
+  if (!b || !b.length) return res.status(404).send('Book not found');
+  res.render('book-details', { book: b[0] });
 }));
 
 // Login Routes
@@ -72,10 +76,13 @@ app.post('/login', w(async (req, res) => {
   const { email, password } = req.body;
   const [users] = await db.query("SELECT * FROM students WHERE email = ?", [email]);
   
-  // यहाँ फिक्स किया: users.length चेक करने के बाद users[0] को पासवर्ड से मैच किया
-  if (users.length && users[0].password_hash === password) { 
-    req.session.user = users[0]; 
-    return res.redirect('/books');
+  // 🔥 फिक्स: डेटाबेस से सिंगल यूज़र ऑब्जेक्ट (users[0]) निकालने का बिल्कुल सटीक तरीका
+  if (users && users.length > 0) {
+    const dbUser = users[0];
+    if (dbUser.password_hash === password) { 
+      req.session.user = dbUser; // सिंगल यूज़र को सेशन में स्टोर करें
+      return res.redirect('/books');
+    }
   }
   res.render('login', { error: 'Invalid username or password' });
 }));
@@ -94,7 +101,8 @@ app.post('/register', w(async (req, res) => {
     await db.query("INSERT INTO students (name, email, password_hash) VALUES (?, ?, ?)", [name, email, password]);
     res.redirect('/login');
   } catch (err) {
-    res.render('register', { error: 'Registration failed. Try again.' });
+    console.error(err);
+    res.render('register', { error: 'Registration failed. Email might already exist.' });
   }
 }));
 
@@ -111,7 +119,7 @@ app.get('/reservations', auth.student, w(async (req, res) => {
       "SELECT r.id, b.title, b.author, r.status, r.reservation_date FROM reservations r JOIN books b ON r.book_id = b.id WHERE r.student_id = ?",
       [req.session.user.id]
     );
-    res.render('reservations', { rows });
+    res.render('reservations', { rows: rows || [] });
   } catch (e) {
     console.error(e);
     res.status(500).send("Database error");
@@ -122,7 +130,7 @@ app.get('/reservations', auth.student, w(async (req, res) => {
 app.post('/books/:id/reserve', auth.student, w(async (req, res) => {
   try {
     const [d] = await db.query("SELECT id FROM reservations WHERE student_id=? AND book_id=? AND status IN('Pending','Approved')", [req.session.user.id, req.params.id]);
-    if (!d.length) {
+    if (!d || !d.length) {
       await db.query('INSERT INTO reservations(student_id, book_id) VALUES(?,?)', [req.session.user.id, req.params.id]);
     }
   } catch (e) {
