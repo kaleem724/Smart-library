@@ -61,7 +61,7 @@ app.get('/login', (req, res) => {
   if (req.session.user) {
     return res.redirect('/books');
   }
-  res.render('login');
+  res.render('login', { admin: null });
 });
 
 app.post('/login', w(async (req, res) => {
