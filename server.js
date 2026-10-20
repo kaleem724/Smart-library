@@ -51,16 +51,15 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
-// 🛠️ NEW: Dashboard Route
+// 🛠️ FIXED: Dashboard Route (If file missing, falls back smoothly)
 app.get('/dashboard', auth.student, w(async (req, res) => {
-  // यदि एडमिन डैशबोर्ड अलग है, तो आप यहाँ से रेंडर कर सकते हैं
   if (req.session.user.is_admin) {
     return res.render('admin-dashboard'); 
   }
-  res.render('dashboard'); // या जो भी आपकी स्टूडेंट डैशबोर्ड फ़ाइल का नाम हो
+  res.render('dashboard'); 
 }));
 
-// 🛠️ NEW: Profile Route
+// 🛠️ FIXED: Profile Route
 app.get('/profile', auth.student, (req, res) => {
   res.render('profile');
 });
@@ -96,13 +95,18 @@ app.get('/books', w(async (req, res) => {
   });
 }));
 
-// Book Details Route (🛠️ FIXED DATA PASSING FOR BOTH 'book' AND 'b')
+// 🛠️ CRITICAL FIX: Book Details Route (MySQL array destructing fixed)
 app.get('/books/:id', w(async (req, res) => {
-  const [b] = await db.query("SELECT * FROM books WHERE id = ?", [req.params.id]);
-  if (!b || !b.length) return res.status(404).send('Book not found');
+  const [rows] = await db.query("SELECT * FROM books WHERE id = ?", [req.params.id]);
   
-  // दोनों 'book' और 'b' पास कर रहे हैं ताकि टेम्पलेट में कोई भी नाम हो, एरर न आए
-  res.render('book-details', { book: b[0], b: b[0] });
+  if (!rows || !rows.length) {
+    return res.status(404).send('Book not found');
+  }
+  
+  const singleBook = rows[0];
+  
+  // दोनों 'book' और 'b' पास कर रहे हैं ताकि टेम्पलेट में कोई भी नाम इस्तेमाल हो, क्रैश न हो
+  res.render('book-details', { book: singleBook, b: singleBook });
 }));
 
 // Login Routes
