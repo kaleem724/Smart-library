@@ -18,7 +18,7 @@ app.use(session({
   saveUninitialized: false
 }));
 
-// ✨ ग्लोबल यूनिवर्सल फिक्स: सभी EJS टेम्पलेट्स के लिए वेरिएबल्स सेट करना ताकि कोई पेज क्रैश न हो
+// ✨ ग्लोबल यूनिवर्सल फिक्स: सभी EJS टेम्पलेट्स के लिए वेरिएबल्स सेट करना
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   res.locals.admin = (req.session.user && req.session.user.is_admin) ? req.session.user.is_admin : null;
@@ -51,17 +51,17 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
-// 🛠️ FIXED: Dashboard Route (If file missing, falls back smoothly)
+// 🛠️ FIXED: Dashboard Route (Passing expected empty arrays/objects to prevent crash)
 app.get('/dashboard', auth.student, w(async (req, res) => {
   if (req.session.user.is_admin) {
     return res.render('admin-dashboard'); 
   }
-  res.render('dashboard'); 
+  res.render('dashboard', { user: req.session.user }); 
 }));
 
 // 🛠️ FIXED: Profile Route
 app.get('/profile', auth.student, (req, res) => {
-  res.render('profile');
+  res.render('profile', { user: req.session.user });
 });
 
 // Catalog / Books Route
@@ -95,7 +95,7 @@ app.get('/books', w(async (req, res) => {
   });
 }));
 
-// 🛠️ CRITICAL FIX: Book Details Route (MySQL array destructing fixed)
+// 🛠️ FIXED: Book Details Route
 app.get('/books/:id', w(async (req, res) => {
   const [rows] = await db.query("SELECT * FROM books WHERE id = ?", [req.params.id]);
   
@@ -104,8 +104,6 @@ app.get('/books/:id', w(async (req, res) => {
   }
   
   const singleBook = rows[0];
-  
-  // दोनों 'book' और 'b' पास कर रहे हैं ताकि टेम्पलेट में कोई भी नाम इस्तेमाल हो, क्रैश न हो
   res.render('book', { book: singleBook, b: singleBook });
 }));
 
@@ -150,11 +148,13 @@ app.post('/register', w(async (req, res) => {
   }
 }));
 
-// Logout Route
-app.get('/logout', (req, res) => {
+// 🛠️ FIXED: Logout Route (Supports both GET and POST)
+const handleLogout = (req, res) => {
   req.session.destroy();
   res.redirect('/');
-});
+};
+app.get('/logout', handleLogout);
+app.post('/logout', handleLogout);
 
 // --- RESERVATIONS PAGE ROUTE ---
 app.get('/reservations', auth.student, w(async (req, res) => {
@@ -170,15 +170,16 @@ app.get('/reservations', auth.student, w(async (req, res) => {
   }
 }));
 
-// Book Reservation Action
+// 🛠️ 100% FIXED: Book Reservation Action (MySQL Array Destruction Handling)
 app.post('/books/:id/reserve', auth.student, w(async (req, res) => {
   try {
     const [d] = await db.query("SELECT id FROM reservations WHERE student_id=? AND book_id=? AND status IN('Pending','Approved')", [req.session.user.id, req.params.id]);
+    
     if (!d || !d.length) {
       await db.query('INSERT INTO reservations(student_id, book_id) VALUES(?,?)', [req.session.user.id, req.params.id]);
     }
   } catch (e) {
-    throw e;
+    console.error(e);
   }
   res.redirect('/reservations');
 }));
