@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
   if (req.session.user) {
     return res.redirect('/books');
   }
-  res.render('index');
+  res.render('index', { books: [] });
 });
 
 // Catalog / Books Route
