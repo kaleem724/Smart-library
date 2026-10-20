@@ -26,7 +26,7 @@ var cats = typeof cats !== 'undefined' ? cats : [];
 
 <div class="grid">
   <% books.forEach(b => { %>
-    <%- include("partials/card", { book: b }) %> <%# 🔥 यहाँ {b} को बदलकर { book: b } कर दिया है %>
+    <%- include("partials/card", { b: b }) %> 
   <% }) %>
 </div>
 
